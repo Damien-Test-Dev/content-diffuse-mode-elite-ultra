@@ -1,7 +1,6 @@
 {
-  "generated_at": "2026-02-01T22:54:58.927Z",
+  "generated_at": "2026-02-01T22:57:57.980Z",
   "messages": [
-    "Mode best-effort: pairing inbox by alphabetical order (no manifest.csv).",
-    "Unsupported image extension for .gitkeep. Use JPG/JPEG/PNG."
+    "manifest.csv pairs=2 but inbox posts=3. Fix manifest or inbox."
   ]
 }
