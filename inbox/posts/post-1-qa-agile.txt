@@ -1,0 +1,26 @@
+﻿On entend encore : “On testera à la fin.”
+Je vais être direct : c’est comme mettre sa ceinture après l’accident.
+
+En Agile Scrum, le test n’est pas une étape.
+C’est un filet de sécurité construit chaque sprint.
+
+Ce qui marche vraiment (simple et efficace)
+✅ Clarifier “fini” : une story n’est pas “done” si elle n’est pas testée.
+✅ Tester tôt : dès que c’est développable, c’est testable.
+✅ Automatiser ce qui se répète : régressions, smoke tests, parcours critiques.
+✅ Garder du test manuel intelligent : exploration, cas limites, expérience utilisateur.
+✅ Parler risques, pas seulement bugs : “Qu’est-ce qui casse le business ?”
+
+Le switch mental à faire
+Le QA n’est pas “la police du bug”.
+Le QA est l’architecte de la confiance.
+
+Quand l’équipe intègre la qualité au quotidien :
+➡️ moins de retours en arrière
+➡️ moins de stress en release
+➡️ plus de valeur livrée, plus vite
+
+Question pour vous :
+Dans votre équipe, “Done” inclut quoi exactement ?
+
+#Agile #Scrum #AssuranceQualite #TestLogiciel #QA #DevOps #AutomationTesting #QualityEngineering
