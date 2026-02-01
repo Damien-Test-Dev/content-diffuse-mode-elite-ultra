@@ -1,0 +1,302 @@
+:root{
+  --bg:#0b0f17;
+  --panel:#111827;
+  --text:#e5e7eb;
+  --muted:#94a3b8;
+  --stroke:#1f2937;
+  --good:#22c55e;
+  --warn:#f59e0b;
+  --info:#60a5fa;
+  --danger:#ef4444;
+}
+
+*{box-sizing:border-box}
+body{
+  margin:0;
+  font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial;
+  background: radial-gradient(1200px 600px at 10% 0%, #111827 0%, var(--bg) 55%);
+  color:var(--text);
+}
+
+.topbar{
+  position: sticky;
+  top: 0;
+  z-index: 20;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  padding: 14px 18px;
+  border-bottom:1px solid var(--stroke);
+  background: rgba(11,15,23,.75);
+  backdrop-filter: blur(10px);
+}
+.brand{display:flex; gap:12px; align-items:center}
+.logo{
+  width:36px;height:36px;border-radius:10px;
+  background: linear-gradient(135deg,#6366f1,#22c55e);
+}
+.title{font-weight:800; letter-spacing:.2px}
+.subtitle{font-size:12px;color:var(--muted)}
+.meta{font-size:12px;color:var(--muted)}
+
+.container{max-width:1100px;margin:0 auto;padding:18px}
+
+.alerts{
+  border:1px solid rgba(239,68,68,.35);
+  background: rgba(239,68,68,.12);
+  padding: 12px 14px;
+  border-radius: 14px;
+  margin-bottom: 14px;
+}
+
+.hero{
+  display:grid;
+  grid-template-columns: 1.2fr .8fr;
+  gap: 18px;
+  align-items:center;
+  padding: 18px;
+  border:1px solid var(--stroke);
+  background: rgba(17,24,39,.6);
+  border-radius: 18px;
+  box-shadow: 0 10px 30px rgba(0,0,0,.25);
+  margin-bottom: 14px;
+}
+.hero h1{margin:0 0 8px 0;font-size:26px}
+.hero p{margin:0 0 12px 0;color:var(--muted); line-height:1.5}
+.legend{display:flex; gap:8px; flex-wrap:wrap}
+.pill{
+  font-size:12px;
+  padding:6px 10px;
+  border-radius:999px;
+  border:1px solid var(--stroke);
+  background: rgba(255,255,255,.04);
+}
+.pill-today{border-color:rgba(96,165,250,.5)}
+.pill-published{border-color:rgba(34,197,94,.5)}
+.pill-incoming{border-color:rgba(245,158,11,.5)}
+
+.panel{
+  padding: 14px;
+  border:1px solid var(--stroke);
+  background: rgba(17,24,39,.45);
+  border-radius: 18px;
+  margin-bottom: 14px;
+}
+.panel-head{
+  display:flex;
+  align-items:baseline;
+  justify-content:space-between;
+  gap:12px;
+  margin-bottom: 10px;
+}
+.panel h2{margin:0;font-size:18px}
+.hint{font-size:12px;color:var(--muted)}
+
+.week{
+  display:grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 10px;
+}
+.week-card{
+  border:1px solid var(--stroke);
+  border-radius: 14px;
+  padding: 10px;
+  background: rgba(255,255,255,.03);
+}
+.week-date{font-weight:700;font-size:13px;margin-bottom:6px}
+.week-status{font-size:12px;color:var(--muted)}
+.week-mini{
+  margin-top:10px;
+  border-radius: 12px;
+  overflow:hidden;
+  border:1px solid rgba(255,255,255,.06);
+}
+.week-mini img{width:100%;height:120px;object-fit:cover;display:block}
+
+.feed{
+  display:flex;
+  flex-direction:column;
+  gap: 12px;
+}
+.post{
+  border:1px solid var(--stroke);
+  border-radius: 18px;
+  overflow:hidden;
+  background: rgba(255,255,255,.03);
+}
+.post-head{
+  display:flex;
+  justify-content:space-between;
+  gap:10px;
+  padding: 12px 14px;
+  border-bottom:1px solid rgba(255,255,255,.06);
+}
+.post-date{font-weight:800}
+.badges{display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end}
+.badge{
+  font-size:11px;
+  padding:4px 8px;
+  border-radius:999px;
+  border:1px solid rgba(255,255,255,.12);
+  background: rgba(255,255,255,.06);
+}
+.badge.published{border-color:rgba(34,197,94,.5)}
+.badge.today{border-color:rgba(96,165,250,.5)}
+.badge.incoming{border-color:rgba(245,158,11,.5)}
+
+.post-body{padding: 14px}
+.post-img{
+  border-radius: 14px;
+  overflow:hidden;
+  border:1px solid rgba(255,255,255,.06);
+}
+.post-img img{width:100%;height:360px;object-fit:cover;display:block}
+.post-text{
+  margin-top: 12px;
+  color: var(--text);
+  white-space: pre-wrap; /* style LinkedIn: sauts de ligne respectés */
+  line-height: 1.55;
+  font-size: 15px;
+}
+.is-future .post-img,
+.is-future .post-text{
+  filter: blur(10px);
+}
+.is-future .post-body{
+  position: relative;
+}
+.is-future .post-body::after{
+  content:"Effet surprise — contenu masqué";
+  position:absolute;
+  inset: 12px 12px auto auto;
+  font-size: 12px;
+  color: rgba(255,255,255,.85);
+  background: rgba(0,0,0,.35);
+  border: 1px solid rgba(255,255,255,.12);
+  padding: 6px 10px;
+  border-radius: 999px;
+  backdrop-filter: blur(6px);
+}
+
+.sentinel{height: 24px;}
+
+/* =======================================================================
+   Intégration de ton CSS UIverse (inchangé)
+   ======================================================================= */
+/* From Uiverse.io by ilkhoeri */
+.wrap_card {
+  position: relative;
+  overflow: hidden;
+  width: var(--w-wrap-card);
+  height: calc(var(--h-card) / 1.25);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  --w-card: 150px;
+  --h-card: 200px;
+  --rotate-card: 15deg;
+  --insetX-card: 28px;
+  --t-card: calc(var(--insetX-card) * 1.25);
+  --w-wrap-card: calc(var(--w-card) + calc(calc(var(--w-card) / 2) * 2));
+}
+
+.content {
+  background-color: #ffffff50;
+  overflow: hidden;
+  position: relative;
+  width: calc(100% - calc(var(--pd) * 2));
+  height: calc(100% - calc(var(--pd) * 2));
+  border-radius: calc(var(--round) - var(--pd));
+}
+.content > span {
+  font-size: 300px;
+  font-weight: 800;
+  line-height: 0.75;
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  inset: 50% 0 0 50%;
+  transform: translate(-50%, -50%);
+  background-clip: text;
+  -webkit-text-stroke-width: 3px;
+  color: transparent;
+  opacity: 0;
+  background-image: linear-gradient(-45deg, #ffffff25 0%, #ffffffac 100%);
+  animation: opacity 0s cubic-bezier(1, 0, 0, 1) forwards var(--delay) reverse;
+}
+.content > svg {
+  height: 66px;
+  width: 66px;
+  position: absolute;
+  inset: 50% 0 0 50%;
+  opacity: 1;
+  animation: opacity 8.4s cubic-bezier(1, 0, 0, 1) forwards
+    calc(var(--delay) - 4.3s);
+  transform: translate(-50%, -50%);
+}
+.card:nth-child(1) { --delay: 4.3s; }
+.card:nth-child(2) { --delay: 7.3s; }
+.card:nth-child(3) { --delay: 10.3s; }
+@keyframes opacity { from { opacity: 1; } to { opacity: 0; } }
+
+.card {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: absolute;
+  overflow: hidden;
+  animation: rotating 9s cubic-bezier(0.75, 0, 0, 1.01) infinite 0s;
+  border-radius: var(--round);
+  background: var(--bg);
+  order: var(--order);
+  width: var(--w-card);
+  height: var(--h-card);
+  z-index: var(--z1);
+  top: var(--t1);
+  left: var(--l1);
+  right: var(--r1);
+  transform: var(--trans1);
+  --pd: 4px;
+  --round: 16px;
+  --x1: var(--insetX-card);
+  --x2: calc(var(--w-wrap-card) - calc(var(--w-card) + var(--insetX-card)));
+  --to-left: rotate(calc(var(--rotate-card) * -1));
+  --to-center: calc(var(--w-card) / 2);
+  --to-right: rotate(calc(var(--rotate-card) * 1));
+}
+
+.card:nth-child(1) {
+  --order: 2;
+  --bg: radial-gradient(circle, rgba(252, 240, 142, 1) 0%, rgba(246, 173, 32, 1) 40%, rgba(192, 142, 8, 1) 100%);
+  --z1: 2; --t1: 0; --l1: var(--to-center); --r1: var(--to-center); --trans1: rotate(calc(var(--rotate-card) * 0));
+  --z2: 0; --t2: var(--t-card); --l2: var(--x1); --r2: var(--x2); --trans2: var(--to-left);
+  --z3: 0; --t3: var(--t-card); --l3: var(--x2); --r3: var(--x1); --trans3: var(--to-right);
+}
+.card:nth-child(2) {
+  --order: 3;
+  --bg: radial-gradient(circle, rgba(142, 249, 252, 1) 0%, rgba(32, 164, 246, 1) 40%, rgba(8, 81, 192, 1) 100%);
+  --z1: 0; --t1: var(--t-card); --l1: var(--x2); --r1: var(--x1); --trans1: var(--to-right);
+  --z2: 2; --t2: 0; --l2: var(--to-center); --r2: var(--to-center); --trans2: rotate(calc(var(--rotate-card) * 0));
+  --z3: 0; --t3: var(--t-card); --l3: var(--x1); --r3: var(--x2); --trans3: var(--to-left);
+}
+.card:nth-child(3) {
+  --order: 1;
+  --bg: radial-gradient(circle, rgba(222, 128, 233, 1) 0%, rgba(213, 32, 246, 1) 40%, rgba(139, 6, 157, 1) 100%);
+  --z1: 0; --t1: var(--t-card); --l1: var(--x1); --r1: var(--x2); --trans1: var(--to-left);
+  --z2: 0; --t2: var(--t-card); --l2: var(--x2); --r2: var(--x1); --trans2: var(--to-right);
+  --z3: 2; --t3: 0; --l3: var(--to-center); --r3: var(--to-center); --trans3: rotate(calc(var(--rotate-card) * 0));
+}
+@keyframes rotating {
+  0%, 99.99% { z-index: var(--z1); top: var(--t1); left: var(--l1); right: var(--r1); transform: var(--trans1); }
+  33.33% { z-index: var(--z2); top: var(--t2); left: var(--l2); right: var(--r2); transform: var(--trans2); }
+  66.66% { z-index: var(--z3); top: var(--t3); left: var(--l3); right: var(--r3); transform: var(--trans3); }
+}
+
+/* Overrides : on veut afficher des vraies images dans la hero */
+.wrap_card .content > span,
+.wrap_card .content > svg{ display:none !important; }
+.wrap_card .content img{ width:100%; height:100%; object-fit:cover; display:block; }
+@media (max-width: 920px){
+  .hero{grid-template-columns:1fr}
+  .wrap_card{margin: 0 auto;}
+}
