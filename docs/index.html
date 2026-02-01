@@ -1,0 +1,64 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Content Ops Dashboard</title>
+  <link rel="stylesheet" href="./styles.css" />
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand">
+      <div class="logo"></div>
+      <div>
+        <div class="title">Content Ops Dashboard</div>
+        <div class="subtitle">Vue planning • Vue semaine • 200 derniers posts</div>
+      </div>
+    </div>
+    <div class="meta" id="metaNow"></div>
+  </header>
+
+  <main class="container">
+    <section class="alerts" id="alerts" hidden></section>
+
+    <!-- Hero animé (intégration de ton code UIverse) -->
+    <section class="hero">
+      <div class="hero-left">
+        <h1>Focus du moment</h1>
+        <p>Le post du jour est mis en avant. Les posts futurs restent floutés (effet surprise).</p>
+        <div class="legend">
+          <span class="pill pill-today">TODAY</span>
+          <span class="pill pill-published">PUBLISHED</span>
+          <span class="pill pill-incoming">INCOMING</span>
+        </div>
+      </div>
+
+      <div class="hero-right">
+        <div class="wrap_card" id="heroRotator"></div>
+      </div>
+    </section>
+
+    <!-- Semaine en cours -->
+    <section class="panel">
+      <div class="panel-head">
+        <h2>Semaine en cours (lun → ven)</h2>
+        <div class="hint">Heure de référence : Europe/Paris</div>
+      </div>
+      <div class="week" id="weekGrid"></div>
+    </section>
+
+    <!-- Feed -->
+    <section class="panel">
+      <div class="panel-head">
+        <h2>Feed (scroll infini)</h2>
+        <div class="hint">Affichage progressif jusqu’à 200 (performance + fluidité).</div>
+      </div>
+
+      <div class="feed" id="feed"></div>
+      <div class="sentinel" id="sentinel"></div>
+    </section>
+  </main>
+
+  <script src="./app.js"></script>
+</body>
+</html>
