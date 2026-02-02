@@ -2,43 +2,49 @@ import fs from "node:fs/promises";
 import path from "node:path";
 
 const ROOT = process.cwd();
-const CONTENT_POSTS = path.join(ROOT, "content", "posts");
-const CONTENT_IMAGES = path.join(ROOT, "content", "images");
-const INBOX_POSTS = path.join(ROOT, "inbox", "posts");
+
+const INBOX_POSTS  = path.join(ROOT, "inbox", "posts");
 const INBOX_IMAGES = path.join(ROOT, "inbox", "images");
-const INBOX_MANIFEST = path.join(ROOT, "inbox", "manifest.csv");
+
+const CONTENT_POSTS  = path.join(ROOT, "content", "posts");
+const CONTENT_IMAGES = path.join(ROOT, "content", "images");
+
 const DOCS = path.join(ROOT, "docs");
 const DOCS_IMAGES = path.join(DOCS, "assets", "images");
+const DOCS_OUTBOX = path.join(DOCS, "outbox");
 
-const MAX_POSTS = 200;
-const IMAGE_EXTS = new Set([".jpg", ".jpeg", ".png"]);
+const MAX_PAIRS = 200;
+
+const POST_EXTS  = new Set([".txt", ".md"]);
+const IMAGE_EXTS = new Set([".png", ".jpg", ".jpeg"]);
 
 function parisISODate(d = new Date()){
-  return d.toLocaleDateString("en-CA", { timeZone: "Europe/Paris" });
+  return d.toLocaleDateString("en-CA", { timeZone: "Europe/Paris" }); // YYYY-MM-DD
 }
-
+function isoToUTCNoon(iso){ return new Date(`${iso}T12:00:00Z`); }
+function addDaysISO(iso, days){
+  const dt = isoToUTCNoon(iso);
+  dt.setUTCDate(dt.getUTCDate() + days);
+  return dt.toISOString().slice(0,10);
+}
+function isWeekdayISO(iso){
+  const dt = isoToUTCNoon(iso);
+  const day = dt.getUTCDay();
+  return day >= 1 && day <= 5;
+}
+function nextWeekdayISO(iso){
+  let cur = iso;
+  while (!isWeekdayISO(cur)) cur = addDaysISO(cur, 1);
+  return cur;
+}
 function parseISOFromName(name){
   const m = name.match(/\d{4}-\d{2}-\d{2}/);
   return m ? m[0] : null;
 }
-
-function isWeekdayISO(iso){
-  const dt = new Date(iso + "T12:00:00Z");
-  const day = dt.getUTCDay();
-  return day >= 1 && day <= 5;
-}
-
-function nextWeekdayISO(startISO){
-  let d = new Date(startISO + "T12:00:00Z");
-  while (true){
-    const iso = d.toISOString().slice(0,10);
-    if (isWeekdayISO(iso)) return iso;
-    d.setUTCDate(d.getUTCDate() + 1);
-  }
-}
+function compare(a,b){ return a < b ? -1 : a > b ? 1 : 0; }
 
 async function ensureDirs(){
-  for (const p of [CONTENT_POSTS, CONTENT_IMAGES, INBOX_POSTS, INBOX_IMAGES, DOCS, DOCS_IMAGES]){
+  for (const p of [INBOX_POSTS, INBOX_IMAGES, CONTENT_POSTS, CONTENT_IMAGES, DOCS, DOCS_IMAGES, DOCS_OUTBOX]){
     await fs.mkdir(p, { recursive: true });
   }
 }
@@ -46,163 +52,163 @@ async function ensureDirs(){
 async function listFiles(dir){
   try{
     const entries = await fs.readdir(dir, { withFileTypes: true });
-    return entries.filter(e=>e.isFile()).map(e=>e.name);
+    return entries.filter(e => e.isFile()).map(e => e.name);
   }catch{
     return [];
   }
 }
 
-async function readText(filePath){
-  return fs.readFile(filePath, "utf8");
-}
+async function readText(p){ return fs.readFile(p, "utf8"); }
 
 async function fileExists(p){
   try{ await fs.access(p); return true; } catch { return false; }
 }
 
-async function parseManifest(){
-  if (!(await fileExists(INBOX_MANIFEST))) return null;
-  const raw = await readText(INBOX_MANIFEST);
-  const lines = raw.split(/\r?\n/).map(l=>l.trim()).filter(Boolean);
-  // format: post_filename,image_filename
-  const pairs = [];
-  for (const l of lines){
-    if (l.startsWith("#")) continue;
-    const [postName, imageName] = l.split(",").map(s=>s?.trim());
-    if (postName && imageName) pairs.push({ postName, imageName });
-  }
-  return pairs.length ? pairs : null;
+async function safeWriteJSON(p, obj){
+  await fs.mkdir(path.dirname(p), { recursive: true });
+  await fs.writeFile(p, JSON.stringify(obj, null, 2), "utf8");
 }
 
-async function organizeInbox(alerts){
-  const postNames = (await listFiles(INBOX_POSTS)).sort();
-  const imgNames = (await listFiles(INBOX_IMAGES)).sort();
+async function writeAlerts(messages){
+  await safeWriteJSON(path.join(DOCS, "alerts.json"), {
+    generated_at: new Date().toISOString(),
+    messages
+  });
+}
 
-  if (!postNames.length && !imgNames.length) return;
+async function renameInboxToContent(alerts){
+  const inboxPostsAll  = (await listFiles(INBOX_POSTS)).filter(n => n !== ".gitkeep");
+  const inboxImagesAll = (await listFiles(INBOX_IMAGES)).filter(n => n !== ".gitkeep");
 
-  if (postNames.length !== imgNames.length){
-    alerts.push(`Inbox mismatch: ${postNames.length} posts vs ${imgNames.length} images. Upload the missing files (or use manifest.csv).`);
+  if (!inboxPostsAll.length && !inboxImagesAll.length) return;
+
+  const inboxPosts = inboxPostsAll
+    .filter(n => POST_EXTS.has(path.extname(n).toLowerCase()))
+    .sort((a,b)=>a.localeCompare(b));
+
+  const inboxImages = inboxImagesAll
+    .filter(n => IMAGE_EXTS.has(path.extname(n).toLowerCase()))
+    .sort((a,b)=>a.localeCompare(b));
+
+  if (inboxPosts.length !== inboxPostsAll.length){
+    alerts.push("Inbox posts: extensions non supportées (autorisé: .txt, .md).");
+    return;
+  }
+  if (inboxImages.length !== inboxImagesAll.length){
+    alerts.push("Inbox images: extensions non supportées (autorisé: .png, .jpg, .jpeg).");
     return;
   }
 
-  let pairs = await parseManifest();
-
-  if (!pairs){
-    // Best-effort pairing by alphabetical order
-    alerts.push("Mode best-effort: pairing inbox by alphabetical order (no manifest.csv).");
-    pairs = postNames.map((p,i)=>({ postName:p, imageName: imgNames[i] }));
-  } else {
-    // Validate manifest counts
-    if (pairs.length !== postNames.length){
-      alerts.push(`manifest.csv pairs=${pairs.length} but inbox posts=${postNames.length}. Fix manifest or inbox.`);
-      return;
-    }
+  const pairsToCreate = Math.min(inboxPosts.length, inboxImages.length);
+  if (pairsToCreate === 0){
+    if (inboxPosts.length > 0) alerts.push(`En attente d'images: ${inboxPosts.length} post(s) en inbox.`);
+    if (inboxImages.length > 0) alerts.push(`En attente de posts: ${inboxImages.length} image(s) en inbox.`);
+    return;
   }
 
-  // Determine start date = max(todayParis, latest existing + 1 day)
+  // Start at tomorrow (Paris), weekday, and after last scheduled if needed
   const today = parisISODate();
-  const existing = (await listFiles(CONTENT_POSTS))
+  const tomorrow = addDaysISO(today, 1);
+  let cursor = nextWeekdayISO(tomorrow);
+
+  const existingDates = (await listFiles(CONTENT_POSTS))
     .map(parseISOFromName)
     .filter(Boolean)
     .sort();
-  let start = today;
-  if (existing.length){
-    const last = existing[existing.length - 1];
-    const d = new Date(last + "T12:00:00Z");
-    d.setUTCDate(d.getUTCDate() + 1);
-    start = d.toISOString().slice(0,10);
+
+  if (existingDates.length){
+    const last = existingDates[existingDates.length - 1];
+    let afterLast = nextWeekdayISO(addDaysISO(last, 1));
+    if (compare(afterLast, cursor) > 0) cursor = afterLast;
   }
-  start = (start < today) ? today : start;
-  start = nextWeekdayISO(start);
 
-  // Avoid collisions if some dates already exist
-  const used = new Set(existing);
+  const used = new Set(existingDates);
 
-  let cursorISO = start;
-  for (const pair of pairs){
-    // find next free weekday
-    while (used.has(cursorISO) || !isWeekdayISO(cursorISO)){
-      const d = new Date(cursorISO + "T12:00:00Z");
-      d.setUTCDate(d.getUTCDate() + 1);
-      cursorISO = nextWeekdayISO(d.toISOString().slice(0,10));
+  alerts.push(`Mode sans manifest: slots (1 post + 1 image) à partir de ${cursor} (lun→ven).`);
+  alerts.push("Association post/image: tri alphabétique dans chaque inbox (stable).");
+
+  let created = 0;
+  for (let i=0; i<pairsToCreate; i++){
+    while (used.has(cursor) || !isWeekdayISO(cursor)){
+      cursor = nextWeekdayISO(addDaysISO(cursor, 1));
     }
 
-    const postSrc = path.join(INBOX_POSTS, pair.postName);
-    const imgSrc  = path.join(INBOX_IMAGES, pair.imageName);
-    const imgExt = path.extname(pair.imageName).toLowerCase();
+    const postName = inboxPosts[i];
+    const imgName  = inboxImages[i];
 
-    if (!IMAGE_EXTS.has(imgExt)){
-      alerts.push(`Unsupported image extension for ${pair.imageName}. Use JPG/JPEG/PNG.`);
-      return;
-    }
+    const postSrc = path.join(INBOX_POSTS, postName);
+    const imgSrc  = path.join(INBOX_IMAGES, imgName);
 
-    const postDst = path.join(CONTENT_POSTS, `${cursorISO}.txt`);
-    const imgDst  = path.join(CONTENT_IMAGES, `${cursorISO}${imgExt}`);
+    const imgExt = path.extname(imgName).toLowerCase();
+
+    const postDst = path.join(CONTENT_POSTS, `${cursor}.txt`);
+    const imgDst  = path.join(CONTENT_IMAGES, `${cursor}${imgExt}`);
 
     await fs.rename(postSrc, postDst);
     await fs.rename(imgSrc, imgDst);
 
-    used.add(cursorISO);
-
-    // next day
-    const d = new Date(cursorISO + "T12:00:00Z");
-    d.setUTCDate(d.getUTCDate() + 1);
-    cursorISO = nextWeekdayISO(d.toISOString().slice(0,10));
+    used.add(cursor);
+    created++;
+    cursor = nextWeekdayISO(addDaysISO(cursor, 1));
   }
+
+  const remainingPosts = inboxPosts.length - created;
+  const remainingImgs  = inboxImages.length - created;
+
+  alerts.push(`Slots créés: ${created}. Reste en inbox → posts: ${remainingPosts}, images: ${remainingImgs}.`);
 }
 
 async function pruneTo200(alerts){
   const posts = (await listFiles(CONTENT_POSTS))
-    .filter(n=>n.endsWith(".txt"))
-    .map(n=>({ name:n, date: parseISOFromName(n) }))
-    .filter(x=>x.date)
+    .filter(n => n.endsWith(".txt"))
+    .map(n => ({ name:n, date: parseISOFromName(n) }))
+    .filter(x => x.date)
     .sort((a,b)=>a.date.localeCompare(b.date));
 
-  if (posts.length <= MAX_POSTS) return;
+  if (posts.length <= MAX_PAIRS) return;
 
-  const toDelete = posts.slice(0, posts.length - MAX_POSTS);
+  const toDelete = posts.slice(0, posts.length - MAX_PAIRS);
   for (const p of toDelete){
     await fs.rm(path.join(CONTENT_POSTS, p.name), { force: true });
 
-    // delete matching image (any ext)
-    const imgs = (await listFiles(CONTENT_IMAGES)).filter(n=>n.startsWith(p.date + "."));
+    const imgs = (await listFiles(CONTENT_IMAGES)).filter(n => n.startsWith(p.date + "."));
     for (const img of imgs){
       await fs.rm(path.join(CONTENT_IMAGES, img), { force: true });
     }
   }
-  alerts.push(`Pruned ${toDelete.length} old posts to keep the last ${MAX_POSTS}.`);
+  alerts.push(`Purge: suppression de ${toDelete.length} slot(s) pour rester à ${MAX_PAIRS}.`);
 }
 
 async function copyImagesToDocs(){
   await fs.mkdir(DOCS_IMAGES, { recursive: true });
-  // clean old
-  const existing = await listFiles(DOCS_IMAGES);
-  await Promise.all(existing.map(n=>fs.rm(path.join(DOCS_IMAGES,n), { force:true })));
 
-  const imgs = await listFiles(CONTENT_IMAGES);
+  const existing = (await listFiles(DOCS_IMAGES)).filter(n => n !== ".gitkeep");
+  await Promise.all(existing.map(n => fs.rm(path.join(DOCS_IMAGES, n), { force: true })));
+
+  const imgs = (await listFiles(CONTENT_IMAGES)).filter(n => n !== ".gitkeep");
   for (const img of imgs){
     await fs.copyFile(path.join(CONTENT_IMAGES, img), path.join(DOCS_IMAGES, img));
   }
 }
 
-async function buildIndex(alerts){
-  const posts = (await listFiles(CONTENT_POSTS))
-    .filter(n=>n.endsWith(".txt"))
-    .map(n=>({ name:n, date: parseISOFromName(n) }))
-    .filter(x=>x.date)
+async function buildIndexAndOutbox(alerts){
+  const postFiles = (await listFiles(CONTENT_POSTS))
+    .filter(n => n.endsWith(".txt"))
+    .map(n => ({ name:n, date: parseISOFromName(n) }))
+    .filter(x => x.date)
     .sort((a,b)=>a.date.localeCompare(b.date));
 
-  const images = await listFiles(CONTENT_IMAGES);
+  const imageFiles = (await listFiles(CONTENT_IMAGES)).filter(n => n !== ".gitkeep");
 
-  const out = [];
-  for (const p of posts){
-    const text = await readText(path.join(CONTENT_POSTS, p.name));
-    const img = images.find(n=>n.startsWith(p.date + "."));
+  const posts = [];
+  for (const p of postFiles){
+    const img = imageFiles.find(n => n.startsWith(p.date + "."));
     if (!img){
-      alerts.push(`Missing image for ${p.date}.`);
+      alerts.push(`Anomalie: image manquante pour ${p.date} (content/images).`);
       continue;
     }
-    out.push({
+    const text = await readText(path.join(CONTENT_POSTS, p.name));
+    posts.push({
       date: p.date,
       text,
       image_file: img,
@@ -210,39 +216,36 @@ async function buildIndex(alerts){
     });
   }
 
-  const payload = {
+  await safeWriteJSON(path.join(DOCS, "index.json"), {
     generated_at: new Date().toISOString(),
-    count: out.length,
-    posts: out
-  };
+    count: posts.length,
+    posts
+  });
 
-  await fs.writeFile(path.join(DOCS, "index.json"), JSON.stringify(payload, null, 2), "utf8");
-
-  // Outbox “today” (utile pour Zapier ensuite)
   const today = parisISODate();
-  const todayPost = out.find(x=>x.date === today);
-  if (todayPost){
-    await fs.mkdir(path.join(DOCS, "outbox"), { recursive: true });
-    await fs.writeFile(path.join(DOCS, "outbox", "today.json"), JSON.stringify(todayPost, null, 2), "utf8");
-  }
-}
+  const todayPost = posts.find(p => p.date === today);
+  const todayPath = path.join(DOCS_OUTBOX, "today.json");
 
-async function writeAlerts(alerts){
-  const payload = { generated_at: new Date().toISOString(), messages: alerts };
-  await fs.writeFile(path.join(DOCS, "alerts.json"), JSON.stringify(payload, null, 2), "utf8");
+  if (todayPost){
+    await safeWriteJSON(todayPath, todayPost);
+  } else if (await fileExists(todayPath)){
+    await fs.rm(todayPath, { force: true });
+  }
 }
 
 async function main(){
   const alerts = [];
   await ensureDirs();
-  await organizeInbox(alerts);
+
+  await renameInboxToContent(alerts);
   await pruneTo200(alerts);
   await copyImagesToDocs();
-  await buildIndex(alerts);
+  await buildIndexAndOutbox(alerts);
+
   await writeAlerts(alerts);
 }
 
-main().catch(err=>{
-  console.error(err);
-  process.exit(1);
+main().catch(async (err) => {
+  await writeAlerts([`Pipeline error: ${err?.message || String(err)}`]);
+  process.exit(0);
 });
